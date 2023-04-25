@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import time
 import os
 main_start = time.time()
@@ -109,10 +103,8 @@ print(spark.sparkContext.getConf().getAll())
 
 # ##### Reading names dataset and cleaning it
 
-# In[ ]:
 
-
-# A file with thousands of people's names (Anush compiled from internet)
+# A file with thousands of people's names (compiled from internet)
 # these three lines will be useful 
 # when we reference the data from other user's workspace
 users= "/mnt/batch/tasks/shared/LS_root/mounts/clusters/vacCPU-gitv3/code/Users/"
@@ -164,9 +156,6 @@ states_abb = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", 
 
 # ##### Zip codes
 
-# In[ ]:
-
-
 # Can't use regex to identify 5 digit sequences because some are medical codes
 # reading the data to create spark df and this dataset has the header available
 zip_codes = spark.read.option('delimiter', ',').option('header', 'True').csv("data/us_zips.csv") 
@@ -179,10 +168,6 @@ zips_list = dist_zip_df.rdd.map(lambda x: x.zipcode).collect()
 
 
 # ##### Cities and Counties
-
-# In[ ]:
-
-
 
 # Read the file with US city names and their corresponding states and counties
 city_county_df=spark.read.option('delimiter', '|').option('header', 'true').csv('data/us_cities_states_counties.csv')
@@ -282,11 +267,6 @@ county_sts_dict = {key: value for key, value in county_sts_dict.items() if value
 
 # Specifying that states_list should only contain unabbreviated states; we have a separate list, states_abb, for abbreviated states
 states_list = [state for state in states_list if len(state) > 2]
-
-
-# - can add the key reference in sub mult (from 4/4 commit) back later; it's adding too much time right now
-
-# In[ ]:
 
 
 us_cities_all = list(set(ct_states_dict.keys()))
@@ -896,6 +876,7 @@ def nameTag(address_text):
         
     ################################################################
 
+# Anush's functions
 
 names_replacerUDF = F.udf(nameTag, StringType())
 
@@ -1168,43 +1149,25 @@ def main(df):
     #print("retrieveColumns, ", one-runStart)
 
     ### Label Tagging
-    print("sample before address:", repr(df.collect()[0]['ReportText']), repr(df.collect()[1]['ReportText']), repr(df.collect()[2]['ReportText']), repr(df.collect()[3]['ReportText']), repr(df.collect()[4]['ReportText']), "\n\n")
     df = df.withColumn("ReportTextMasked", address_replacerUDF("ReportText"))
-    print("sample after address:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df = df.withColumn("ReportTextMasked", names_replacerUDF("ReportTextMasked"))
-    print("sample after name:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df = replaceEmail(df)
-    print("sample after email:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df = replaceSSN(df)
-    print("sample after ssn:",repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df = replacePhone(df)
-    print("sample after phone:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
 
     df = replaceURL(df)
-    print("sample after url:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df = replaceIP(df)
-    print("sample after ip:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df = replaceAccountNumber(df)
-    print("sample after acc:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     two = time.time()
-    print("Label Tagging: ", two-one)
 
     ###### Text Cleanup
     df = replaceReportText(df)
-    print("sample after replacereporttext:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     three = time.time()
-    print("replaceReportText, ", three-two)
-    print("\n\n")
-
     df = whitespaceLocation(df)
-    print("sample after whitepacelocation:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     four = time.time()
-    print("whitespaceLocation, ", four-three)
 
     df = outsideTagging(df)
-    print("sample after outsidetagging:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     five = time.time()
-    print("outsideTagging, ", five-four)
 
     tag_replacerUDF = F.udf(tagCorrector, StringType())
     df = df.withColumnRenamed("ReportTextIOB", "ReportTextIOB_old")
@@ -1216,14 +1179,12 @@ def main(df):
 
     #Size and Label Validations
     df = df.withColumn('label_validation', check_labels_udf('ReportTextIOB'))
-    print("sample after label validation:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df.select('label_validation').groupBy('label_validation').count().show()
     df = df.filter("label_validation == 1")
     seven = time.time() 
     print("Label Validation: ", seven-six)
 
     df = df.withColumn('new', checklinesframelikenemo_udf('ReportTextCleaned','ReportTextIOB'))
-    print("sample after checklikenemo:", repr(df.collect()[0]['ReportTextMasked']), repr(df.collect()[1]["ReportTextMasked"]), repr(df.collect()[2]["ReportTextMasked"]), repr(df.collect()[3]["ReportTextMasked"]), repr(df.collect()[4]["ReportTextMasked"]), "\n\n")
     df.select('new.*').groupBy('split_equals').count().sort(desc('split_equals')).show()
     df = df.select('TIUDocumentSID', 'new.*', 'ReportText', 'ReportTextMasked', 'ReportTextCleaned', 'ReportTextIOB', 'ReportTextIOB_old', 'locations').filter(F.col('split_equals')=='1')#.show(truncate=False)
     eight = time.time() 
